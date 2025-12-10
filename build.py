@@ -575,6 +575,7 @@ def get_github_info(config):
         "readme_content": "<p>欢迎来到我的主页!</p>",
         "recent_repos": [],
         "activity_data": [0] * 12,
+        "activity_labels": [],  # 添加月份标签
         "tech_stack": []
     }
 
@@ -622,6 +623,71 @@ def get_github_info(config):
             if resp.status_code == 200:
                 default_info['readme_content'] = markdown_to_html(resp.text)
                 break
+
+        # 获取活动数据（最近12个月的提交统计）
+        try:
+            from datetime import datetime, timedelta
+            from collections import defaultdict
+
+            # 获取用户最近的事件（尝试多页以获取更多数据）
+            all_events = []
+            for page in range(1, 4):  # 获取前3页，最多300个事件
+                resp = requests.get(f'https://api.github.com/users/{username}/events?per_page=100&page={page}',
+                                   headers=headers, timeout=10, verify=False)
+                if resp.status_code == 200:
+                    events = resp.json()
+                    if not events:  # 如果没有更多事件，退出循环
+                        break
+                    all_events.extend(events)
+                else:
+                    break
+
+            if all_events:
+                # 按最近12个月统计提交数量
+                now = datetime.now()
+                monthly_commits = [0] * 12
+
+                # 生成最近12个月的月份标签
+                month_names = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+                month_labels = []
+                for i in range(11, -1, -1):
+                    past_date = now - timedelta(days=i*30)
+                    month_labels.append(month_names[past_date.month - 1])
+
+                for event in all_events:
+                    # 统计所有活动类型，不只是 PushEvent
+                    if event.get('type') in ['PushEvent', 'CreateEvent', 'IssuesEvent', 'PullRequestEvent', 'IssueCommentEvent']:
+                        created_at = event.get('created_at', '')
+                        if created_at:
+                            try:
+                                event_date = datetime.strptime(created_at, '%Y-%m-%dT%H:%M:%SZ')
+                                # 计算月份差异
+                                months_diff = (now.year - event_date.year) * 12 + (now.month - event_date.month)
+
+                                # 只统计最近12个月的数据
+                                if 0 <= months_diff < 12:
+                                    month_index = 11 - months_diff  # 映射到数组索引
+                                    # 统计事件数量而不是 commits 数量（因为 GitHub API 不总是返回详细的 commits）
+                                    monthly_commits[month_index] += 1
+                            except Exception as e:
+                                pass
+
+                # 如果有数据，更新 activity_data
+                total_events = sum(monthly_commits)
+                if total_events > 0:
+                    default_info['activity_data'] = monthly_commits
+                    default_info['activity_labels'] = month_labels
+                    print(f"   获取到最近12个月的 {total_events} 次活动记录")
+                else:
+                    print("   未找到最近12个月的活动记录")
+                    # 即使没有数据也使用动态月份标签
+                    default_info['activity_labels'] = month_labels
+                    print("   注意：GitHub Events API 通常只保留最近90天的数据")
+            else:
+                print(f"   无法获取活动数据")
+
+        except Exception as e:
+            print(f"   获取活动数据出错: {e}")
 
     except Exception as e:
         print(f"   GitHub API 错误: {e}")

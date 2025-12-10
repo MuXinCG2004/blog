@@ -573,9 +573,9 @@
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+                        labels: {{ github_info.activity_labels | tojson if github_info.activity_labels else "['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']" }},
                         datasets: [{
-                            label: '代码提交',
+                            label: 'GitHub 活动',
                             data: {{ github_info.activity_data | tojson }},
                             borderColor: isDark ? '{{ config.theme.dark_primary_color }}' : '{{ config.theme.primary_color }}',
                             backgroundColor: isDark ? 'rgba(168, 85, 247, 0.1)' : 'rgba(106, 17, 203, 0.1)',
