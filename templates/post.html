@@ -10,9 +10,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <!-- 代码高亮 - 使用完整版 highlight.js -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
+    <!-- 代码高亮 - 使用 cdnjs 的 highlight.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- 常用语言包 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -187,7 +192,8 @@
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // 等待所有脚本加载完成后再初始化
+        window.addEventListener('load', function() {
             // 数学公式渲染
             if (typeof renderMathInElement !== 'undefined') {
                 renderMathInElement(document.getElementById('content'), {
@@ -202,14 +208,16 @@
             }
 
             // 代码高亮
-            document.querySelectorAll('.code-block pre code').forEach((el) => {
-                hljs.highlightElement(el);
-            });
+            if (typeof hljs !== 'undefined') {
+                document.querySelectorAll('.code-block pre code').forEach((el) => {
+                    hljs.highlightElement(el);
+                });
+            }
 
             // 为代码块添加复制按钮和语言标签
             document.querySelectorAll('.code-block').forEach((block) => {
                 const code = block.querySelector('code');
-                const pre = block.querySelector('pre');
+                if (!code) return;
 
                 // 获取语言
                 const langClass = code.className.match(/language-(\w+)/);
