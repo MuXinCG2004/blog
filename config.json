@@ -1,0 +1,30 @@
+{
+  "name": "MuXinCG2004",
+  "bio": "Student",
+  "avatar": "https://github.com/MuXinCG2004.png",
+  "github_url": "https://github.com/MuXinCG2004",
+  "site_url": "https://muxincg2004.github.io",
+  "dark_mode": "auto",
+  "introduction_file": "Introduction.md",
+  "theme": {
+    "primary_color": "#0d9488",
+    "secondary_color": "#06b6d4",
+    "dark_primary_color": "#14b8a6",
+    "dark_secondary_color": "#22d3ee"
+  },
+  "background": {
+    "image": "background.png",
+    "blur": 4,
+    "overlay_opacity": 0.6,
+    "overlay_color": "#f3f4f6",
+    "dark_overlay_color": "#121212"
+  },
+  "contact": {
+    "qq": "",
+    "wechat": "",
+    "bilibili": "",
+    "douyin": "",
+    "xiaohongshu": ""
+  },
+  "recent_posts_count": 3
+}
