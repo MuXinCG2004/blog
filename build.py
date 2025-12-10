@@ -78,6 +78,9 @@ def markdown_to_html(md):
     list_type = None
     in_math_block = False
     math_lines = []
+    in_table = False
+    table_rows = []
+    table_aligns = []
 
     def close_list():
         nonlocal in_list, list_type
@@ -85,6 +88,31 @@ def markdown_to_html(md):
             html.append('</ul>' if list_type == 'ul' else '</ol>')
             in_list = False
             list_type = None
+
+    def close_table():
+        nonlocal in_table, table_rows, table_aligns
+        if in_table and table_rows:
+            table_html = ['<div class="table-wrapper"><table>']
+            for i, row in enumerate(table_rows):
+                if i == 0:
+                    table_html.append('<thead><tr>')
+                    for j, cell in enumerate(row):
+                        align = table_aligns[j] if j < len(table_aligns) else ''
+                        align_attr = f' style="text-align:{align}"' if align else ''
+                        table_html.append(f'<th{align_attr}>{process_inline(cell)}</th>')
+                    table_html.append('</tr></thead><tbody>')
+                else:
+                    table_html.append('<tr>')
+                    for j, cell in enumerate(row):
+                        align = table_aligns[j] if j < len(table_aligns) else ''
+                        align_attr = f' style="text-align:{align}"' if align else ''
+                        table_html.append(f'<td{align_attr}>{process_inline(cell)}</td>')
+                    table_html.append('</tr>')
+            table_html.append('</tbody></table></div>')
+            html.append(''.join(table_html))
+            table_rows = []
+            table_aligns = []
+            in_table = False
 
     def process_inline(text):
         # 图片
@@ -118,8 +146,34 @@ def markdown_to_html(md):
             code_lines.append(line.replace('<', '&lt;').replace('>', '&gt;'))
             continue
 
+        # 表格行检测
+        if line.strip().startswith('|') and line.strip().endswith('|'):
+            close_list()
+            cells = [c.strip() for c in line.strip()[1:-1].split('|')]
+
+            # 检查是否是分隔行（如 |:---:|:---:|）
+            if all(re.match(r'^:?-+:?$', c.strip()) for c in cells if c.strip()):
+                # 解析对齐方式
+                table_aligns = []
+                for c in cells:
+                    c = c.strip()
+                    if c.startswith(':') and c.endswith(':'):
+                        table_aligns.append('center')
+                    elif c.endswith(':'):
+                        table_aligns.append('right')
+                    else:
+                        table_aligns.append('left')
+                in_table = True
+            else:
+                table_rows.append(cells)
+                in_table = True
+            continue
+        elif in_table:
+            close_table()
+
         if not line.strip():
             close_list()
+            close_table()
             continue
 
         if line.startswith('#'):
@@ -166,6 +220,7 @@ def markdown_to_html(md):
         html.append(f'<p>{process_inline(line)}</p>')
 
     close_list()
+    close_table()
     result = '\n'.join(html)
 
     # 恢复行间公式
