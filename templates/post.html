@@ -13,6 +13,8 @@
     <!-- 代码高亮 - 使用 cdnjs 的 highlight.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Mermaid 图表 -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <!-- 引入等宽字体 -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- 常用语言包 -->
@@ -113,6 +115,51 @@
             font-size: 0.875em;
             line-height: 1.7;
             tab-size: 4;
+            counter-reset: line;
+        }
+        /* 代码行号 */
+        .code-block pre code .line {
+            display: block;
+            position: relative;
+            padding-left: 3.5em;
+        }
+        .code-block pre code .line::before {
+            content: counter(line);
+            counter-increment: line;
+            position: absolute;
+            left: 0;
+            width: 2.5em;
+            text-align: right;
+            color: #6e7681;
+            user-select: none;
+            padding-right: 1em;
+            border-right: 1px solid #30363d;
+        }
+        /* 高亮行 */
+        .code-block pre code .line.highlight {
+            background-color: rgba(255, 255, 0, 0.1);
+            border-left: 3px solid #ffd700;
+            margin-left: -1em;
+            padding-left: 4.5em;
+        }
+        /* Diff 显示 */
+        .code-block pre code .line.diff-add {
+            background-color: rgba(46, 160, 67, 0.15);
+        }
+        .code-block pre code .line.diff-add::after {
+            content: '+';
+            position: absolute;
+            left: 0.5em;
+            color: #3fb950;
+        }
+        .code-block pre code .line.diff-remove {
+            background-color: rgba(248, 81, 73, 0.15);
+        }
+        .code-block pre code .line.diff-remove::after {
+            content: '-';
+            position: absolute;
+            left: 0.5em;
+            color: #f85149;
         }
         /* 复制按钮 */
         .code-copy-btn {
@@ -218,9 +265,138 @@
             overflow-x: auto;
             overflow-y: hidden;
         }
+
+        /* 返回顶部按钮 */
+        #back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, {{ config.theme.primary_color }}, {{ config.theme.secondary_color }});
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 1000;
+        }
+        #back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        #back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .dark #back-to-top {
+            background: linear-gradient(135deg, {{ config.theme.dark_primary_color }}, {{ config.theme.dark_secondary_color }});
+        }
+
+        /* 阅读进度条 */
+        #reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, {{ config.theme.primary_color }}, {{ config.theme.secondary_color }});
+            z-index: 9999;
+            transition: width 0.1s ease;
+        }
+        .dark #reading-progress {
+            background: linear-gradient(90deg, {{ config.theme.dark_primary_color }}, {{ config.theme.dark_secondary_color }});
+        }
+
+        /* 文章目录样式 */
+        #toc-sidebar {
+            position: fixed;
+            top: 6rem;
+            right: 2rem;
+            width: 16rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 40;
+            transition: opacity 0.3s ease;
+        }
+        .dark #toc-sidebar {
+            background: rgba(17, 24, 39, 0.6);
+        }
+        #toc-sidebar.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #toc-sidebar h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #6b7280;
+        }
+        .dark #toc-sidebar h4 {
+            color: #9ca3af;
+        }
+        #toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #toc-list li {
+            margin: 0.5rem 0;
+        }
+        #toc-list a {
+            display: block;
+            font-size: 0.875rem;
+            color: #6b7280;
+            text-decoration: none;
+            padding: 0.25rem 0;
+            transition: color 0.2s ease;
+            border-left: 2px solid transparent;
+            padding-left: 0.75rem;
+        }
+        #toc-list a:hover {
+            color: {{ config.theme.primary_color }};
+        }
+        .dark #toc-list a:hover {
+            color: {{ config.theme.dark_primary_color }};
+        }
+        #toc-list a.active {
+            color: {{ config.theme.primary_color }};
+            border-left-color: {{ config.theme.primary_color }};
+            font-weight: 500;
+        }
+        .dark #toc-list a.active {
+            color: {{ config.theme.dark_primary_color }};
+            border-left-color: {{ config.theme.dark_primary_color }};
+        }
+        #toc-list li.level-3 {
+            padding-left: 1rem;
+        }
+        #toc-list li.level-4 {
+            padding-left: 2rem;
+        }
+
+        /* 响应式：小屏幕隐藏目录 */
+        @media (max-width: 1280px) {
+            #toc-sidebar {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- 阅读进度条 -->
+    <div id="reading-progress"></div>
+
     <!-- 导航栏 -->
     <nav class="fixed w-full top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -240,6 +416,12 @@
     </nav>
 
     <main class="container mx-auto px-4 pt-24 pb-16 max-w-4xl">
+        <!-- 文章目录侧边栏 -->
+        <aside id="toc-sidebar" class="hidden">
+            <h4><i class="fa-solid fa-list mr-2"></i>目录</h4>
+            <ul id="toc-list"></ul>
+        </aside>
+
         <article class="glass-panel rounded-2xl p-8 shadow-lg">
             <!-- 文章头部 -->
             <header class="mb-8 pb-6 border-b dark:border-gray-700">
@@ -260,6 +442,41 @@
             </div>
         </article>
 
+        <!-- 评论区 -->
+        <div class="glass-panel rounded-2xl p-8 shadow-lg mt-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fa-solid fa-comments text-primary dark:text-primary-dark mr-2"></i>
+                评论
+            </h3>
+            <div class="giscus"></div>
+        </div>
+
+        <!-- 相关文章推荐 -->
+        {% if related_posts %}
+        <div class="glass-panel rounded-2xl p-8 shadow-lg mt-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fa-solid fa-lightbulb text-primary dark:text-primary-dark mr-2"></i>
+                相关文章
+            </h3>
+            <div class="space-y-4">
+                {% for related in related_posts %}
+                <a href="{{ related.slug }}.html" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-all hover:-translate-y-1">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-primary dark:text-primary-dark">{{ related.title }}</h4>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ related.date }}</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">{{ related.summary }}</p>
+                    <div class="flex gap-2">
+                        {% for tag in related.tags %}
+                            <span class="text-xs px-2 py-1 bg-primary/10 text-primary dark:bg-primary-dark/10 dark:text-primary-dark rounded">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- 返回顶部 -->
         <div class="mt-8 text-center">
             <a href="../blog.html" class="inline-flex items-center text-primary dark:text-primary-dark hover:underline">
@@ -267,6 +484,11 @@
             </a>
         </div>
     </main>
+
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" title="返回顶部">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
 
     <script>
         // 深色模式
@@ -282,6 +504,117 @@
 
         // 等待所有脚本加载完成后再初始化
         window.addEventListener('load', function() {
+            // 初始化 Mermaid
+            if (typeof mermaid !== 'undefined') {
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default'
+                });
+
+                // 处理 mermaid 代码块
+                document.querySelectorAll('code.language-mermaid').forEach((el) => {
+                    const pre = el.parentElement;
+                    const codeBlock = pre.parentElement;
+                    const mermaidCode = el.textContent;
+
+                    // 创建 mermaid 容器
+                    const mermaidDiv = document.createElement('div');
+                    mermaidDiv.className = 'mermaid';
+                    mermaidDiv.textContent = mermaidCode;
+
+                    // 替换代码块
+                    codeBlock.replaceWith(mermaidDiv);
+                });
+
+                // 渲染所有 mermaid 图表
+                mermaid.run();
+            }
+
+            // 生成文章目录
+            const content = document.getElementById('content');
+            const tocSidebar = document.getElementById('toc-sidebar');
+            const tocList = document.getElementById('toc-list');
+            const headings = content.querySelectorAll('h1, h2, h3, h4');
+
+            if (headings.length > 0) {
+                tocSidebar.classList.remove('hidden');
+
+                headings.forEach((heading, index) => {
+                    // 为标题添加 ID
+                    const id = `heading-${index}`;
+                    heading.id = id;
+
+                    // 创建目录项
+                    const li = document.createElement('li');
+                    li.className = `level-${heading.tagName.toLowerCase().substring(1)}`;
+
+                    const a = document.createElement('a');
+                    a.href = `#${id}`;
+                    a.textContent = heading.textContent;
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // 更新 URL hash
+                        history.pushState(null, null, `#${id}`);
+                    });
+
+                    li.appendChild(a);
+                    tocList.appendChild(li);
+                });
+
+                // 监听滚动，高亮当前标题
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const id = entry.target.id;
+                        const tocLink = tocList.querySelector(`a[href="#${id}"]`);
+
+                        if (entry.isIntersecting) {
+                            // 移除所有 active
+                            tocList.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+                            // 添加当前 active
+                            if (tocLink) tocLink.classList.add('active');
+                        }
+                    });
+                }, {
+                    rootMargin: '-80px 0px -80% 0px'
+                });
+
+                headings.forEach(heading => observer.observe(heading));
+            }
+
+            // 阅读进度条
+            const readingProgress = document.getElementById('reading-progress');
+
+            function updateReadingProgress() {
+                const windowHeight = window.innerHeight;
+                const documentHeight = document.documentElement.scrollHeight - windowHeight;
+                const scrolled = window.pageYOffset;
+                const progress = (scrolled / documentHeight) * 100;
+                readingProgress.style.width = progress + '%';
+            }
+
+            window.addEventListener('scroll', updateReadingProgress);
+            updateReadingProgress(); // 初始化
+
+            // 返回顶部按钮
+            const backToTopBtn = document.getElementById('back-to-top');
+
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.add('show');
+                } else {
+                    backToTopBtn.classList.remove('show');
+                }
+            });
+
+            backToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
             // 数学公式渲染
             if (typeof renderMathInElement !== 'undefined') {
                 renderMathInElement(document.getElementById('content'), {
@@ -298,6 +631,38 @@
             // 代码高亮
             if (typeof hljs !== 'undefined') {
                 document.querySelectorAll('.code-block pre code').forEach((el) => {
+                    // 先处理代码内容，添加行号
+                    const codeText = el.textContent;
+                    const lines = codeText.split('\n');
+                    let processedHTML = '';
+
+                    lines.forEach((line, index) => {
+                        // 检测特殊标记
+                        let lineClass = 'line';
+                        let lineContent = line;
+
+                        // Diff 标记：以 + 开头表示新增，- 开头表示删除
+                        if (line.startsWith('+ ')) {
+                            lineClass += ' diff-add';
+                            lineContent = line.substring(2);
+                        } else if (line.startsWith('- ')) {
+                            lineClass += ' diff-remove';
+                            lineContent = line.substring(2);
+                        }
+                        // 高亮标记：// highlight 或 # highlight
+                        else if (line.includes('// highlight') || line.includes('# highlight')) {
+                            lineClass += ' highlight';
+                            lineContent = line.replace('// highlight', '').replace('# highlight', '');
+                        }
+
+                        // 转义 HTML
+                        lineContent = lineContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        processedHTML += `<span class="${lineClass}">${lineContent}</span>\n`;
+                    });
+
+                    el.innerHTML = processedHTML;
+
+                    // 然后进行语法高亮
                     hljs.highlightElement(el);
                 });
             }
@@ -347,6 +712,45 @@
 
                 // 插入头部到代码块开头
                 block.insertBefore(header, pre);
+            });
+
+            // Giscus 评论系统
+            const giscusScript = document.createElement('script');
+            giscusScript.src = 'https://giscus.app/client.js';
+            giscusScript.setAttribute('data-repo', 'MuXinCG2004/MuXinCG2004.github.io');
+            giscusScript.setAttribute('data-repo-id', 'R_kgDOQl_QCg');
+            giscusScript.setAttribute('data-category', 'General');
+            giscusScript.setAttribute('data-category-id', 'DIC_kwDOQl_QCs4Czn51');
+            giscusScript.setAttribute('data-mapping', 'pathname');
+            giscusScript.setAttribute('data-strict', '0');
+            giscusScript.setAttribute('data-reactions-enabled', '1');
+            giscusScript.setAttribute('data-emit-metadata', '0');
+            giscusScript.setAttribute('data-input-position', 'top');
+            giscusScript.setAttribute('data-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            giscusScript.setAttribute('data-lang', 'zh-CN');
+            giscusScript.setAttribute('data-loading', 'lazy');
+            giscusScript.setAttribute('crossorigin', 'anonymous');
+            giscusScript.async = true;
+
+            const giscusContainer = document.querySelector('.giscus');
+            if (giscusContainer) {
+                giscusContainer.appendChild(giscusScript);
+            }
+
+            // 监听主题变化，更新 Giscus 主题
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', function() {
+                setTimeout(() => {
+                    const theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                    const iframe = document.querySelector('iframe.giscus-frame');
+                    if (iframe) {
+                        iframe.contentWindow.postMessage({
+                            giscus: {
+                                setConfig: { theme: theme }
+                            }
+                        }, 'https://giscus.app');
+                    }
+                }, 100);
             });
         });
     </script>

@@ -53,10 +53,27 @@
             <i class="fa-solid fa-blog text-primary dark:text-primary-dark mr-3"></i>博客文章
         </h1>
 
-        <div class="space-y-6">
+        <!-- 搜索框 -->
+        <div class="mb-8">
+            <div class="relative">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="搜索文章标题、标签或内容..."
+                    class="w-full px-4 py-3 pl-12 rounded-xl glass-panel border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark transition-all"
+                >
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <button id="clear-search" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div id="search-results-count" class="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden"></div>
+        </div>
+
+        <div id="posts-container" class="space-y-6">
             {% if posts %}
                 {% for post in posts %}
-                <a href="post/{{ post.slug }}.html" class="block glass-panel rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+                <a href="post/{{ post.slug }}.html" class="post-item block glass-panel rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1" data-title="{{ post.title }}" data-summary="{{ post.summary }}" data-tags="{{ post.tags|join(',') }}">
                     <div class="flex justify-between items-start mb-3">
                         <h2 class="text-xl font-bold text-primary dark:text-primary-dark">{{ post.title }}</h2>
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.date }}</span>
@@ -76,6 +93,12 @@
                 </div>
             {% endif %}
         </div>
+
+        <!-- 无搜索结果提示 -->
+        <div id="no-results" class="text-center py-16 text-gray-500 dark:text-gray-400 hidden">
+            <i class="fa-solid fa-search text-6xl mb-4"></i>
+            <p>未找到匹配的文章</p>
+        </div>
     </main>
 
     <script>
@@ -88,6 +111,79 @@
         document.getElementById('theme-toggle').addEventListener('click', function() {
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // 搜索功能
+        const searchInput = document.getElementById('search-input');
+        const clearSearchBtn = document.getElementById('clear-search');
+        const searchResultsCount = document.getElementById('search-results-count');
+        const postsContainer = document.getElementById('posts-container');
+        const noResults = document.getElementById('no-results');
+        const postItems = document.querySelectorAll('.post-item');
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            if (searchTerm === '') {
+                // 显示所有文章
+                postItems.forEach(item => {
+                    item.style.display = 'block';
+                });
+                postsContainer.classList.remove('hidden');
+                noResults.classList.add('hidden');
+                clearSearchBtn.classList.add('hidden');
+                searchResultsCount.classList.add('hidden');
+                return;
+            }
+
+            clearSearchBtn.classList.remove('hidden');
+
+            let visibleCount = 0;
+            postItems.forEach(item => {
+                const title = item.dataset.title.toLowerCase();
+                const summary = item.dataset.summary.toLowerCase();
+                const tags = item.dataset.tags.toLowerCase();
+
+                if (title.includes(searchTerm) || summary.includes(searchTerm) || tags.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // 显示结果计数
+            if (visibleCount > 0) {
+                searchResultsCount.textContent = `找到 ${visibleCount} 篇相关文章`;
+                searchResultsCount.classList.remove('hidden');
+                postsContainer.classList.remove('hidden');
+                noResults.classList.add('hidden');
+            } else {
+                searchResultsCount.classList.add('hidden');
+                postsContainer.classList.add('hidden');
+                noResults.classList.remove('hidden');
+            }
+        }
+
+        // 输入时搜索（防抖）
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 300);
+        });
+
+        // 清除搜索
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            performSearch();
+            searchInput.focus();
+        });
+
+        // 回车键搜索
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
         });
     </script>
 </body>

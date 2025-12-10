@@ -115,6 +115,17 @@ def markdown_to_html(md):
             in_table = False
 
     def process_inline(text):
+        # Emoji 支持 :emoji_name:
+        emoji_map = {
+            ':smile:': '😊', ':tada:': '🎉', ':rocket:': '🚀', ':fire:': '🔥',
+            ':heart:': '❤️', ':star:': '⭐', ':check:': '✅', ':x:': '❌',
+            ':warning:': '⚠️', ':bulb:': '💡', ':book:': '📚', ':memo:': '📝',
+            ':computer:': '💻', ':coffee:': '☕', ':thumbsup:': '👍', ':thumbsdown:': '👎',
+            ':eyes:': '👀', ':thinking:': '🤔', ':sunglasses:': '😎', ':muscle:': '💪'
+        }
+        for emoji_code, emoji in emoji_map.items():
+            text = text.replace(emoji_code, emoji)
+
         # 图片
         text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'<img src="\2" alt="\1">', text)
         # 链接
@@ -202,8 +213,17 @@ def markdown_to_html(md):
                 html.append('<ul>')
                 in_list = True
                 list_type = 'ul'
-            text = process_inline(re.sub(r'^[-*+]\s+', '', line))
-            html.append(f'<li>{text}</li>')
+
+            # 处理 Todo List： - [ ] 或 - [x]
+            todo_match = re.match(r'^[-*+]\s+\[([ xX])\]\s+(.+)$', line)
+            if todo_match:
+                checked = todo_match.group(1).lower() == 'x'
+                text = process_inline(todo_match.group(2))
+                checkbox = f'<input type="checkbox" {"checked" if checked else ""} disabled style="margin-right: 0.5em;">'
+                html.append(f'<li style="list-style: none;">{checkbox}{text}</li>')
+            else:
+                text = process_inline(re.sub(r'^[-*+]\s+', '', line))
+                html.append(f'<li>{text}</li>')
             continue
 
         if re.match(r'^\d+\.\s+', line):
@@ -423,6 +443,30 @@ def get_posts():
     posts.sort(key=lambda x: x['date'], reverse=True)
     return posts
 
+def get_related_posts(current_post, all_posts, limit=3):
+    """获取相关文章（基于标签相似度）"""
+    related = []
+    current_tags = set(current_post['tags'])
+
+    for post in all_posts:
+        if post['slug'] == current_post['slug']:
+            continue
+
+        # 计算标签重叠数量
+        post_tags = set(post['tags'])
+        common_tags = current_tags & post_tags
+        similarity = len(common_tags)
+
+        if similarity > 0:
+            related.append({
+                'post': post,
+                'similarity': similarity
+            })
+
+    # 按相似度排序并返回前N篇
+    related.sort(key=lambda x: x['similarity'], reverse=True)
+    return [item['post'] for item in related[:limit]]
+
 def build_blog():
     """构建博客页面"""
     print("📝 构建博客...")
@@ -453,7 +497,9 @@ def build_blog():
         with open(post_template, 'r', encoding='utf-8') as f:
             template = f.read()
         for post in posts:
-            html = render_template(template, config=config, post=post)
+            # 获取相关文章
+            related_posts = get_related_posts(post, posts, limit=3)
+            html = render_template(template, config=config, post=post, related_posts=related_posts)
             with open(post_dir / f"{post['slug']}.html", 'w', encoding='utf-8') as f:
                 f.write(html)
             print(f"   生成 post/{post['slug']}.html")
