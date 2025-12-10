@@ -4,24 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ post.title }} - {{ config.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- KaTeX 数学公式渲染 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <!-- 代码高亮 - 使用 cdnjs 的 highlight.js -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <!-- Mermaid 图表 -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <!-- 引入等宽字体 -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- 常用语言包 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+    <!-- Tailwind CSS - 使用国内CDN -->
+    <script src="https://npm.elemecdn.com/tailwindcss@3.4.1/lib/index.js"></script>
+    <!-- Font Awesome - 使用国内CDN -->
+    <link href="https://npm.elemecdn.com/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- KaTeX 数学公式渲染 - 使用国内CDN -->
+    <link rel="stylesheet" href="https://npm.elemecdn.com/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://npm.elemecdn.com/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://npm.elemecdn.com/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- 代码高亮 - 使用国内CDN -->
+    <link rel="stylesheet" href="https://npm.elemecdn.com/highlight.js@11.9.0/styles/github-dark.min.css">
+    <script src="https://npm.elemecdn.com/highlight.js@11.9.0/highlight.min.js"></script>
+    <!-- Mermaid 图表 - 使用国内CDN -->
+    <script src="https://npm.elemecdn.com/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- 引入等宽字体 - 使用国内CDN -->
+    <link href="https://npm.elemecdn.com/lxgw-wenkai-webfont@1.1.0/style.css" rel="stylesheet">
+    <!-- 常用语言包 - 使用国内CDN -->
+    <script src="https://npm.elemecdn.com/highlight.js@11.9.0/languages/python.min.js"></script>
+    <script src="https://npm.elemecdn.com/highlight.js@11.9.0/languages/javascript.min.js"></script>
+    <script src="https://npm.elemecdn.com/highlight.js@11.9.0/languages/bash.min.js"></script>
+    <script src="https://npm.elemecdn.com/highlight.js@11.9.0/languages/json.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
