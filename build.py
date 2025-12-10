@@ -237,7 +237,20 @@ def markdown_to_html(md):
             continue
 
         close_list()
-        html.append(f'<p>{process_inline(line)}</p>')
+        # 检查是否是HTML标签（以<开头，以>结尾）
+        stripped = line.strip()
+        if stripped.startswith('<') and stripped.endswith('>'):
+            # 直接添加HTML标签，不包裹在<p>中
+            html.append(line)
+        elif stripped.startswith('<') and not stripped.endswith('>'):
+            # HTML标签可能跨行，也直接添加
+            html.append(line)
+        elif '<br' in stripped.lower():
+            # 包含br标签，直接添加
+            html.append(line)
+        else:
+            # 普通文本，包裹在<p>中
+            html.append(f'<p>{process_inline(line)}</p>')
 
     close_list()
     close_table()
