@@ -674,6 +674,11 @@ def copy_assets():
 
 def ensure_venv():
     """确保在虚拟环境中运行"""
+    # 如果在 CI/CD 环境中（如 Vercel），跳过虚拟环境检查
+    if os.environ.get('VERCEL') or os.environ.get('CI'):
+        print("📦 检测到 CI/CD 环境，跳过虚拟环境检查")
+        return
+
     venv_dir = ROOT_DIR / 'venv'
 
     if sys.platform == 'win32':
@@ -706,6 +711,11 @@ def ensure_venv():
 
 def check_dependencies():
     """检查依赖"""
+    # 在 CI/CD 环境中跳过依赖检查
+    if os.environ.get('VERCEL') or os.environ.get('CI'):
+        print("📦 CI/CD 环境，依赖已由平台管理")
+        return
+
     print("📦 检查依赖...")
     venv_dir = ROOT_DIR / 'venv'
 
