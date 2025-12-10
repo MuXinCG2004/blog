@@ -46,7 +46,9 @@ static_build1/
 github_token.txt
 
 # 生成的文件 (由构建脚本生成)
-index.html
+# 注意：只忽略根目录的 index.html，不忽略 templates/ 中的
+/index.html
+dist/index.html
 
 # 其他
 home/
