@@ -126,8 +126,8 @@ def markdown_to_html(md):
         for emoji_code, emoji in emoji_map.items():
             text = text.replace(emoji_code, emoji)
 
-        # 图片
-        text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'<img src="\2" alt="\1">', text)
+        # 图片 - 先处理，避免被链接匹配
+        text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', r'<img src="\2" alt="\1" />', text)
         # 链接
         text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
         # 粗体
@@ -237,17 +237,23 @@ def markdown_to_html(md):
             continue
 
         close_list()
-        # 检查是否是HTML标签（以<开头，以>结尾）
+        # 检查是否是HTML标签或包含图片
         stripped = line.strip()
-        if stripped.startswith('<') and stripped.endswith('>'):
+
+        # 如果包含Markdown图片语法，不包裹在<p>中
+        if re.search(r'!\[.*?\]\(.*?\)', line):
+            html.append(process_inline(line))
+        # 如果是HTML标签（以<开头）
+        elif stripped.startswith('<'):
             # 直接添加HTML标签，不包裹在<p>中
             html.append(line)
-        elif stripped.startswith('<') and not stripped.endswith('>'):
-            # HTML标签可能跨行，也直接添加
-            html.append(line)
-        elif '<br' in stripped.lower():
+        # 如果包含br标签
+        elif '<br' in stripped.lower() or '</br>' in stripped.lower():
             # 包含br标签，直接添加
             html.append(line)
+        # 如果是空行或只有空格
+        elif not stripped:
+            continue
         else:
             # 普通文本，包裹在<p>中
             html.append(f'<p>{process_inline(line)}</p>')

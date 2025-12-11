@@ -383,6 +383,73 @@
                         {{ github_info.readme_content|safe }}
                     </div>
                 </div>
+                <style>
+                    /* GitHub风格的README样式 */
+                    #readme-content {
+                        line-height: 1.6;
+                    }
+                    #readme-content img {
+                        max-width: 100%;
+                        height: auto;
+                        display: inline-block;
+                    }
+                    #readme-content img[align="center"] {
+                        display: block;
+                        margin: 0 auto;
+                    }
+                    #readme-content img[align="left"] {
+                        float: left;
+                        margin-right: 1rem;
+                    }
+                    #readme-content img[align="right"] {
+                        float: right;
+                        margin-left: 1rem;
+                    }
+                    #readme-content [align="center"] {
+                        text-align: center;
+                    }
+                    #readme-content [align="left"] {
+                        text-align: left;
+                    }
+                    #readme-content [align="right"] {
+                        text-align: right;
+                    }
+                    #readme-content table {
+                        width: auto;
+                        margin: 1rem auto;
+                        border-collapse: collapse;
+                    }
+                    #readme-content table td,
+                    #readme-content table th {
+                        padding: 0.5rem 1rem;
+                        border: none;
+                    }
+                    #readme-content h1 {
+                        clear: both;
+                        padding-top: 1rem;
+                    }
+                    #readme-content h3 {
+                        clear: both;
+                        font-weight: 600;
+                        margin: 1rem 0;
+                    }
+                    #readme-content br {
+                        clear: both;
+                    }
+                    #readme-content ul {
+                        list-style: none;
+                        padding-left: 0;
+                    }
+                    #readme-content li {
+                        margin: 0.5rem 0;
+                    }
+                    /* 清除浮动 */
+                    #readme-content::after {
+                        content: "";
+                        display: table;
+                        clear: both;
+                    }
+                </style>
 
                 <!-- 最近仓库 -->
                 <div class="glass-panel bg-white/30 dark:bg-gray-800/30 rounded-2xl shadow-xl p-6 mt-6 card-hover animate-fade-in" style="animation-delay: 0.4s;">
