@@ -240,8 +240,12 @@ def markdown_to_html(md):
         # 检查是否是HTML标签或包含图片
         stripped = line.strip()
 
+        # 检查是否包含数学公式块占位符（MATHBLOCK）
+        if 'MATHBLOCK' in stripped and 'ENDBLOCK' in stripped:
+            # 数学公式块，直接添加，不包裹在<p>中
+            html.append(line)
         # 如果包含Markdown图片语法，不包裹在<p>中
-        if re.search(r'!\[.*?\]\(.*?\)', line):
+        elif re.search(r'!\[.*?\]\(.*?\)', line):
             html.append(process_inline(line))
         # 如果是HTML标签（以<开头）
         elif stripped.startswith('<'):
@@ -262,8 +266,9 @@ def markdown_to_html(md):
     close_table()
     result = '\n'.join(html)
 
-    # 恢复行间公式
+    # 恢复行间公式（块级）
     for i, math in enumerate(math_blocks):
+        # 使用 div 标签包裹，KaTeX 会自动识别 $$...$$
         result = result.replace(f'MATHBLOCK{i}ENDBLOCK', f'<div class="math-block">$${math}$$</div>')
 
     # 恢复行内公式

@@ -625,15 +625,23 @@
 
             // 数学公式渲染
             if (typeof renderMathInElement !== 'undefined') {
-                renderMathInElement(document.getElementById('content'), {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\[', right: '\\]', display: true},
-                        {left: '\\(', right: '\\)', display: false}
-                    ],
-                    throwOnError: false
-                });
+                try {
+                    renderMathInElement(document.getElementById('content'), {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false,
+                        strict: false
+                    });
+                    console.log('KaTeX 渲染成功');
+                } catch (error) {
+                    console.error('KaTeX 渲染失败:', error);
+                }
+            } else {
+                console.warn('renderMathInElement 未定义，KaTeX 可能未加载完成');
             }
 
             // 代码高亮
