@@ -440,16 +440,22 @@ def render_template(template_content, **kwargs):
 # ============== 博客构建 ==============
 
 def get_posts():
-    """获取所有博客文章"""
+    """获取所有博客文章（支持文件夹结构）"""
     posts = []
     if not POSTS_DIR.exists():
         return posts
 
-    for filepath in POSTS_DIR.glob('*.md'):
+    # 递归获取所有 .md 文件
+    for filepath in POSTS_DIR.rglob('*.md'):
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
         meta, body = parse_frontmatter(content)
         html = markdown_to_html(body)
+
+        # 计算文章的分类（从文件路径提取）
+        rel_path = filepath.relative_to(POSTS_DIR)
+        category = str(rel_path.parent) if rel_path.parent != Path('.') else ''
+
         posts.append({
             'slug': filepath.stem,
             'title': meta.get('title', '无标题'),
@@ -457,11 +463,66 @@ def get_posts():
             'tags': meta.get('tags', []),
             'summary': meta.get('summary', ''),
             'lang': meta.get('lang', 'en'),
+            'category': category,  # 新增：文章分类
+            'path': str(rel_path),  # 新增：文件路径
             'html': html
         })
 
     posts.sort(key=lambda x: x['date'], reverse=True)
+
+    # Debug: print first post details
+    if posts:
+        print(f"   示例文章: {posts[0]['title']} (category: '{posts[0].get('category', 'None')}')")
+
     return posts
+
+def get_posts_tree():
+    """获取博客文章的树形结构"""
+    tree = {}
+    if not POSTS_DIR.exists():
+        return tree
+
+    for filepath in POSTS_DIR.rglob('*.md'):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        meta, body = parse_frontmatter(content)
+
+        # 计算相对路径
+        rel_path = filepath.relative_to(POSTS_DIR)
+        parts = list(rel_path.parts)
+
+        # 构建树形结构
+        current = tree
+        for i, part in enumerate(parts[:-1]):  # 除了文件名的所有部分
+            if part not in current:
+                current[part] = {'_folders': {}, '_files': []}
+            current = current[part]['_folders']
+
+        # 添加文件信息
+        if len(parts) > 1:
+            parent = tree
+            for part in parts[:-2]:
+                parent = parent[part]['_folders']
+            if parts[-2] not in parent:
+                parent[parts[-2]] = {'_folders': {}, '_files': []}
+            parent[parts[-2]]['_files'].append({
+                'name': filepath.stem,
+                'title': meta.get('title', '无标题'),
+                'date': meta.get('date', ''),
+                'path': str(rel_path)
+            })
+        else:
+            # 根目录文件
+            if '_root' not in tree:
+                tree['_root'] = {'_folders': {}, '_files': []}
+            tree['_root']['_files'].append({
+                'name': filepath.stem,
+                'title': meta.get('title', '无标题'),
+                'date': meta.get('date', ''),
+                'path': str(rel_path)
+            })
+
+    return tree
 
 def get_related_posts(current_post, all_posts, limit=3):
     """获取相关文章（基于标签相似度）"""
@@ -493,7 +554,30 @@ def build_blog():
 
     config = load_config()
     posts = get_posts()
+    posts_tree = get_posts_tree()
     print(f"   找到 {len(posts)} 篇文章")
+
+    # 按分类分组文章
+    posts_by_category = {}
+    for post in posts:
+        category = post.get('category', '') or 'Uncategorized'
+        if category not in posts_by_category:
+            posts_by_category[category] = []
+        posts_by_category[category].append(post)
+
+    # Debug output
+    print(f"   分类统计:")
+    for cat, cat_posts in posts_by_category.items():
+        print(f"   - {cat or '(空)'}: {len(cat_posts)} 篇")
+
+    # 转换为列表格式供模板使用 (custom template engine doesn't support .items())
+    categories_list = []
+    for cat_name, cat_posts in sorted(posts_by_category.items()):
+        categories_list.append({
+            'name': cat_name,
+            'posts': cat_posts,
+            'count': len(cat_posts)
+        })
 
     # 创建 post 目录
     post_dir = DIST_DIR / 'post'
@@ -507,7 +591,7 @@ def build_blog():
     if blog_template.exists():
         with open(blog_template, 'r', encoding='utf-8') as f:
             template = f.read()
-        html = render_template(template, config=config, posts=posts)
+        html = render_template(template, config=config, posts=posts, posts_tree=posts_tree, categories=categories_list)
         with open(DIST_DIR / 'blog.html', 'w', encoding='utf-8') as f:
             f.write(html)
         print("   生成 blog.html")
@@ -535,6 +619,7 @@ def build_homepage():
 
     config = load_config()
     posts = get_posts()
+    posts_tree = get_posts_tree()
 
     # 读取主页模板
     index_template = TEMPLATES_DIR / 'index.html'
@@ -564,7 +649,8 @@ def build_homepage():
                                    now=datetime.now(),
                                    background_exists=background_exists,
                                    background_path=background_image,
-                                   recent_posts=posts[:3])
+                                   recent_posts=posts[:3],
+                                   posts_tree=posts_tree)
 
         with open(DIST_DIR / 'index.html', 'w', encoding='utf-8') as f:
             f.write(html)

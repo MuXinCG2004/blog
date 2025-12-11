@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博客 - {{ config.name }}</title>
+    <title>Blog - {{ config.name }}</title>
     <!-- Tailwind CSS - 使用官方CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome - 使用国内CDN -->
@@ -52,7 +52,7 @@
 
     <main class="container mx-auto px-4 pt-24 pb-16 max-w-4xl">
         <h1 class="text-3xl font-bold mb-8">
-            <i class="fa-solid fa-blog text-primary dark:text-primary-dark mr-3"></i>博客文章
+            <i class="fa-solid fa-blog text-primary dark:text-primary-dark mr-3"></i>Blog Posts
         </h1>
 
         <!-- 搜索框 -->
@@ -61,7 +61,7 @@
                 <input
                     type="text"
                     id="search-input"
-                    placeholder="搜索文章标题、标签或内容..."
+                    placeholder="Search by title, tags, or content..."
                     class="w-full px-4 py-3 pl-12 rounded-xl glass-panel border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark transition-all"
                 >
                 <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -72,34 +72,64 @@
             <div id="search-results-count" class="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden"></div>
         </div>
 
-        <div id="posts-container" class="space-y-6">
-            {% if posts %}
-                {% for post in posts %}
-                <a href="post/{{ post.slug }}.html" class="post-item block glass-panel rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1" data-title="{{ post.title }}" data-summary="{{ post.summary }}" data-tags="{{ post.tags|join(',') }}">
-                    <div class="flex justify-between items-start mb-3">
-                        <h2 class="text-xl font-bold text-primary dark:text-primary-dark">{{ post.title }}</h2>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.date }}</span>
-                    </div>
-                    <p class="text-gray-600 dark:text-gray-400 mb-4">{{ post.summary }}</p>
-                    <div class="flex gap-2">
-                        {% for tag in post.tags %}
-                            <span class="text-xs px-2 py-1 bg-primary/10 text-primary dark:bg-primary-dark/10 dark:text-primary-dark rounded">{{ tag }}</span>
+        <!-- 文件夹筛选 -->
+        <div class="mb-6 flex gap-3 flex-wrap">
+            <button class="category-filter px-4 py-2 rounded-full text-sm font-medium transition-all bg-primary text-white" data-category="all">
+                <i class="fa-solid fa-list mr-2"></i>All
+            </button>
+            {% if categories %}
+                {% for category in categories %}
+                    <button class="category-filter px-4 py-2 rounded-full text-sm font-medium transition-all glass-panel hover:bg-primary hover:text-white" data-category="{{ category.name }}">
+                        <i class="fa-solid fa-folder mr-2"></i>{{ category.name }}
+                    </button>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div id="posts-container">
+            {% if categories %}
+                <!-- 按文件夹分组显示 -->
+                {% for category in categories %}
+                <div class="category-section mb-8" data-category="{{ category.name }}">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fa-solid fa-folder-open text-primary dark:text-primary-dark mr-2"></i>
+                        {% if category.name == 'Uncategorized' %}
+                        Uncategorized
+                        {% else %}
+                        {{ category.name }}
+                        {% endif %}
+                        <span class="ml-2 text-sm font-normal text-gray-500">({{ category.count }})</span>
+                    </h2>
+                    <div class="space-y-4">
+                        {% for post in category.posts %}
+                        <a href="post/{{ post.slug }}.html" class="post-item block glass-panel rounded-xl p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1" data-title="{{ post.title }}" data-summary="{{ post.summary }}" data-tags="{{ post.tags|join(',') }}" data-category="{{ category.name }}">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-lg font-bold text-primary dark:text-primary-dark">{{ post.title }}</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.date }}</span>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">{{ post.summary }}</p>
+                            <div class="flex gap-2 flex-wrap">
+                                {% for tag in post.tags %}
+                                    <span class="text-xs px-2 py-1 bg-primary/10 text-primary dark:bg-primary-dark/10 dark:text-primary-dark rounded">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </a>
                         {% endfor %}
                     </div>
-                </a>
+                </div>
                 {% endfor %}
             {% else %}
                 <div class="text-center py-16 text-gray-500 dark:text-gray-400">
                     <i class="fa-solid fa-inbox text-6xl mb-4"></i>
-                    <p>暂无博客文章</p>
+                    <p>No blog posts yet</p>
                 </div>
             {% endif %}
         </div>
 
-        <!-- 无搜索结果提示 -->
+        <!-- No search results message -->
         <div id="no-results" class="text-center py-16 text-gray-500 dark:text-gray-400 hidden">
             <i class="fa-solid fa-search text-6xl mb-4"></i>
-            <p>未找到匹配的文章</p>
+            <p>No matching posts found</p>
         </div>
     </main>
 
@@ -156,7 +186,7 @@
 
             // 显示结果计数
             if (visibleCount > 0) {
-                searchResultsCount.textContent = `找到 ${visibleCount} 篇相关文章`;
+                searchResultsCount.textContent = `Found ${visibleCount} matching post${visibleCount !== 1 ? 's' : ''}`;
                 searchResultsCount.classList.remove('hidden');
                 postsContainer.classList.remove('hidden');
                 noResults.classList.add('hidden');
@@ -186,6 +216,39 @@
             if (e.key === 'Enter') {
                 performSearch();
             }
+        });
+
+        // 文件夹筛选功能
+        const categoryFilters = document.querySelectorAll('.category-filter');
+        const categorySections = document.querySelectorAll('.category-section');
+
+        categoryFilters.forEach(filter => {
+            filter.addEventListener('click', function() {
+                const category = this.dataset.category;
+
+                // 更新按钮状态
+                categoryFilters.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('glass-panel', 'hover:bg-primary', 'hover:text-white');
+                });
+                this.classList.add('bg-primary', 'text-white');
+                this.classList.remove('glass-panel');
+
+                // 显示/隐藏分类
+                if (category === 'all') {
+                    categorySections.forEach(section => {
+                        section.style.display = 'block';
+                    });
+                } else {
+                    categorySections.forEach(section => {
+                        if (section.dataset.category === category) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                }
+            });
         });
     </script>
 </body>
