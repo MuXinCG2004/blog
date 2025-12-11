@@ -33,7 +33,7 @@ def load_config():
 
 def parse_frontmatter(content):
     """解析 YAML frontmatter"""
-    meta = {'title': '无标题', 'date': '', 'tags': [], 'summary': ''}
+    meta = {'title': '无标题', 'date': '', 'tags': [], 'summary': '', 'lang': 'en'}
     if content.startswith('---'):
         parts = content.split('---', 2)
         if len(parts) >= 3:
@@ -450,6 +450,7 @@ def get_posts():
             'date': meta.get('date', ''),
             'tags': meta.get('tags', []),
             'summary': meta.get('summary', ''),
+            'lang': meta.get('lang', 'en'),
             'html': html
         })
 
@@ -571,7 +572,7 @@ def build_homepage():
         return False
 
 def get_github_info(config):
-    """获取 GitHub 用户信息"""
+    """获取 GitHub 用户信息（优化版：减少请求，防止超时）"""
     import requests
     import ssl
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -588,7 +589,7 @@ def get_github_info(config):
         "readme_content": "<p>欢迎来到我的主页!</p>",
         "recent_repos": [],
         "activity_data": [0] * 12,
-        "activity_labels": [],  # 添加月份标签
+        "activity_labels": [],
         "tech_stack": []
     }
 
@@ -599,108 +600,103 @@ def get_github_info(config):
         print(f"   获取 GitHub 数据: {username}")
         headers = {'Accept': 'application/vnd.github.v3+json'}
 
+        # 设置短超时，防止阻塞
+        timeout = 5
+
         # 获取用户信息
-        resp = requests.get(f'https://api.github.com/users/{username}', headers=headers, timeout=10, verify=False)
-        if resp.status_code == 200:
-            user = resp.json()
-            default_info['avatar_url'] = user.get('avatar_url', default_info['avatar_url'])
-            default_info['name'] = user.get('name') or username
-            default_info['bio'] = config.get('bio') or user.get('bio', '')
-
-        # 获取仓库
-        resp = requests.get(f'https://api.github.com/users/{username}/repos?sort=pushed&per_page=10',
-                           headers=headers, timeout=10, verify=False)
-        if resp.status_code == 200:
-            repos = resp.json()
-            default_info['total_repos'] = len(repos)
-            default_info['total_stars'] = sum(r.get('stargazers_count', 0) for r in repos)
-            default_info['recent_repos'] = repos[:5]
-
-            # 分析技术栈
-            languages = {}
-            for repo in repos:
-                lang = repo.get('language')
-                if lang:
-                    languages[lang] = languages.get(lang, 0) + 1
-
-            colors = ['#6a11cb', '#2575fc', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-            tech_stack = []
-            for i, (lang, _) in enumerate(sorted(languages.items(), key=lambda x: -x[1])[:6]):
-                tech_stack.append({'name': lang, 'color': colors[i % len(colors)]})
-            default_info['tech_stack'] = tech_stack
-
-        # 获取 README
-        for branch in ['main', 'master']:
-            readme_url = f'https://raw.githubusercontent.com/{username}/{username}/{branch}/README.md'
-            resp = requests.get(readme_url, timeout=5, verify=False)
+        try:
+            resp = requests.get(f'https://api.github.com/users/{username}',
+                               headers=headers, timeout=timeout, verify=False)
             if resp.status_code == 200:
-                default_info['readme_content'] = markdown_to_html(resp.text)
-                break
+                user = resp.json()
+                default_info['avatar_url'] = user.get('avatar_url', default_info['avatar_url'])
+                default_info['name'] = user.get('name') or username
+                default_info['bio'] = config.get('bio') or user.get('bio', '')
+        except Exception as e:
+            print(f"   获取用户信息失败: {e}")
 
-        # 获取活动数据（最近12个月的提交统计）
+        # 获取仓库（限制数量）
+        try:
+            resp = requests.get(f'https://api.github.com/users/{username}/repos?sort=pushed&per_page=5',
+                               headers=headers, timeout=timeout, verify=False)
+            if resp.status_code == 200:
+                repos = resp.json()
+                default_info['total_repos'] = len(repos)
+                default_info['total_stars'] = sum(r.get('stargazers_count', 0) for r in repos)
+                default_info['recent_repos'] = repos[:5]
+
+                # 分析技术栈
+                languages = {}
+                for repo in repos:
+                    lang = repo.get('language')
+                    if lang:
+                        languages[lang] = languages.get(lang, 0) + 1
+
+                colors = ['#6a11cb', '#2575fc', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                tech_stack = []
+                for i, (lang, _) in enumerate(sorted(languages.items(), key=lambda x: -x[1])[:6]):
+                    tech_stack.append({'name': lang, 'color': colors[i % len(colors)]})
+                default_info['tech_stack'] = tech_stack
+        except Exception as e:
+            print(f"   获取仓库信息失败: {e}")
+
+        # 获取 README（限制大小）
+        try:
+            for branch in ['main', 'master']:
+                readme_url = f'https://raw.githubusercontent.com/{username}/{username}/{branch}/README.md'
+                resp = requests.get(readme_url, timeout=3, verify=False)
+                if resp.status_code == 200:
+                    readme_text = resp.text
+                    # 限制README大小，防止内存问题
+                    if len(readme_text) > 50000:  # 限制50KB
+                        readme_text = readme_text[:50000] + "\n\n...(内容过长，已截断)"
+                    default_info['readme_content'] = markdown_to_html(readme_text)
+                    break
+        except Exception as e:
+            print(f"   获取README失败: {e}")
+
+        # 获取活动数据（简化版，减少请求）
         try:
             from datetime import datetime, timedelta
-            from collections import defaultdict
 
-            # 获取用户最近的事件（尝试多页以获取更多数据）
-            all_events = []
-            for page in range(1, 4):  # 获取前3页，最多300个事件
-                resp = requests.get(f'https://api.github.com/users/{username}/events?per_page=100&page={page}',
-                                   headers=headers, timeout=10, verify=False)
-                if resp.status_code == 200:
-                    events = resp.json()
-                    if not events:  # 如果没有更多事件，退出循环
-                        break
-                    all_events.extend(events)
-                else:
-                    break
+            # 只获取第一页事件
+            resp = requests.get(f'https://api.github.com/users/{username}/events?per_page=100&page=1',
+                               headers=headers, timeout=timeout, verify=False)
 
-            if all_events:
-                # 按最近12个月统计提交数量
-                now = datetime.now()
-                monthly_commits = [0] * 12
+            if resp.status_code == 200:
+                events = resp.json()
 
-                # 生成最近12个月的月份标签
-                month_names = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
-                month_labels = []
-                for i in range(11, -1, -1):
-                    past_date = now - timedelta(days=i*30)
-                    month_labels.append(month_names[past_date.month - 1])
+                if events:
+                    # 按最近12个月统计
+                    now = datetime.now()
+                    monthly_commits = [0] * 12
 
-                for event in all_events:
-                    # 统计所有活动类型，不只是 PushEvent
-                    if event.get('type') in ['PushEvent', 'CreateEvent', 'IssuesEvent', 'PullRequestEvent', 'IssueCommentEvent']:
-                        created_at = event.get('created_at', '')
-                        if created_at:
-                            try:
-                                event_date = datetime.strptime(created_at, '%Y-%m-%dT%H:%M:%SZ')
-                                # 计算月份差异
-                                months_diff = (now.year - event_date.year) * 12 + (now.month - event_date.month)
+                    # 生成月份标签（使用英文简称，前端会处理国际化）
+                    month_labels = []
+                    for i in range(11, -1, -1):
+                        past_date = now - timedelta(days=i*30)
+                        month_labels.append(str(past_date.month))
 
-                                # 只统计最近12个月的数据
-                                if 0 <= months_diff < 12:
-                                    month_index = 11 - months_diff  # 映射到数组索引
-                                    # 统计事件数量而不是 commits 数量（因为 GitHub API 不总是返回详细的 commits）
-                                    monthly_commits[month_index] += 1
-                            except Exception as e:
-                                pass
+                    for event in events:
+                        if event.get('type') in ['PushEvent', 'CreateEvent', 'IssuesEvent', 'PullRequestEvent']:
+                            created_at = event.get('created_at', '')
+                            if created_at:
+                                try:
+                                    event_date = datetime.strptime(created_at, '%Y-%m-%dT%H:%M:%SZ')
+                                    months_diff = (now.year - event_date.year) * 12 + (now.month - event_date.month)
 
-                # 如果有数据，更新 activity_data
-                total_events = sum(monthly_commits)
-                if total_events > 0:
-                    default_info['activity_data'] = monthly_commits
-                    default_info['activity_labels'] = month_labels
-                    print(f"   获取到最近12个月的 {total_events} 次活动记录")
-                else:
-                    print("   未找到最近12个月的活动记录")
-                    # 即使没有数据也使用动态月份标签
-                    default_info['activity_labels'] = month_labels
-                    print("   注意：GitHub Events API 通常只保留最近90天的数据")
-            else:
-                print(f"   无法获取活动数据")
+                                    if 0 <= months_diff < 12:
+                                        month_index = 11 - months_diff
+                                        monthly_commits[month_index] += 1
+                                except Exception:
+                                    pass
 
+                    total_events = sum(monthly_commits)
+                    if total_events > 0:
+                        default_info['activity_data'] = monthly_commits
+                        print(f"   获取到 {total_events} 次活动记录")
         except Exception as e:
-            print(f"   获取活动数据出错: {e}")
+            print(f"   获取活动数据失败: {e}")
 
     except Exception as e:
         print(f"   GitHub API 错误: {e}")

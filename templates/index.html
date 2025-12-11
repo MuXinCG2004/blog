@@ -424,10 +424,10 @@
                         <span data-i18n="recent-blog">最近博客</span>
                         <a href="blog.html" class="ml-auto text-sm font-normal text-primary dark:text-primary-dark hover:underline" data-i18n="view-all">查看全部 →</a>
                     </h2>
-                    <div class="space-y-4">
+                    <div class="space-y-4" id="recent-posts-container">
                         {% if recent_posts %}
                             {% for post in recent_posts %}
-                                <a href="post/{{ post.slug }}.html" class="block p-4 bg-gray-50 dark:bg-gray-700 rounded-xl repo-item hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <a href="post/{{ post.slug }}.html" class="blog-post-item block p-4 bg-gray-50 dark:bg-gray-700 rounded-xl repo-item hover:bg-gray-100 dark:hover:bg-gray-600" data-lang="{{ post.lang }}">
                                     <div class="flex justify-between items-start mb-2">
                                         <h3 class="text-lg font-semibold text-primary dark:text-primary-dark">{{ post.title }}</h3>
                                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ post.date }}</span>
@@ -501,7 +501,8 @@
                 'recent-projects': '最近项目',
                 'recent-blog': '最近博客',
                 'view-all': '查看全部 →',
-                'github-activity': 'GitHub 活动'
+                'github-activity': 'GitHub 活动',
+                'months': ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
             },
             'en': {
                 'visit-github': 'Visit my GitHub',
@@ -513,7 +514,8 @@
                 'recent-projects': 'Recent Projects',
                 'recent-blog': 'Recent Blog',
                 'view-all': 'View All →',
-                'github-activity': 'GitHub Activity'
+                'github-activity': 'GitHub Activity',
+                'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             }
         };
 
@@ -551,7 +553,7 @@
             });
 
             /* 语言切换功能 */
-            let currentLang = localStorage.getItem('language') || 'zh';
+            let currentLang = localStorage.getItem('language') || 'en';
 
             // 切换语言函数
             function setLanguage(lang) {
@@ -574,6 +576,9 @@
 
                 // 更新图表标签
                 updateChartLanguage(lang);
+
+                // 筛选博客文章
+                filterBlogPosts(lang);
             }
 
             // 更新图表语言
@@ -590,11 +595,14 @@
                         existingChart.destroy();
                     }
 
+                    // 使用当前语言的月份标签
+                    const monthLabels = i18n[lang]['months'];
+
                     // 创建新图表
                     new Chart(chartCanvas, {
                         type: 'line',
                         data: {
-                            labels: {{ github_info.activity_labels | tojson if github_info.activity_labels else "['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']" }},
+                            labels: monthLabels,
                             datasets: [{
                                 label: i18n[lang]['github-activity'],
                                 data: {{ github_info.activity_data | tojson }},
@@ -637,6 +645,41 @@
                             }
                         }
                     });
+                }
+            }
+
+            // 根据语言筛选博客文章
+            function filterBlogPosts(lang) {
+                const postsContainer = document.getElementById('recent-posts-container');
+                if (!postsContainer) return;
+
+                const allPosts = postsContainer.querySelectorAll('.blog-post-item');
+                let visibleCount = 0;
+
+                allPosts.forEach(post => {
+                    const postLang = post.getAttribute('data-lang') || 'en';
+                    if (postLang === lang) {
+                        post.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        post.style.display = 'none';
+                    }
+                });
+
+                // 如果没有匹配的博客，显示提示
+                const noPostsMsg = postsContainer.querySelector('.no-posts-message');
+                if (visibleCount === 0) {
+                    if (!noPostsMsg) {
+                        const msg = document.createElement('div');
+                        msg.className = 'no-posts-message p-6 text-center text-gray-500 dark:text-gray-400';
+                        msg.innerHTML = '<i class="fa-solid fa-blog text-4xl mb-3"></i><p>' +
+                            (lang === 'zh' ? '暂无中文博客文章' : 'No English blog posts yet') + '</p>';
+                        postsContainer.appendChild(msg);
+                    }
+                } else {
+                    if (noPostsMsg) {
+                        noPostsMsg.remove();
+                    }
                 }
             }
 
