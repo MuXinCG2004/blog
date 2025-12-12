@@ -433,11 +433,13 @@
                 </a>
 
                 <!-- 语言切换 -->
+                <!-- 已注释：中英文切换功能
                 <button id="language-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative" title="切换语言">
                     <span class="text-gray-700 dark:text-gray-300 font-medium text-sm">
                         <span class="lang-text">中文</span>
                     </span>
                 </button>
+                -->
 
                 <!-- 极简模式开关 -->
                 <button id="minimal-mode-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative">
@@ -724,6 +726,7 @@
     <!-- JavaScript -->
     <script>
         // 国际化翻译数据
+        /* 已注释：中英文翻译数据
         const i18n = {
             'zh': {
                 'visit-github': '访问我的 GitHub',
@@ -752,11 +755,12 @@
                 'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             }
         };
+        */
 
         // 深色模式切换
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggle = document.getElementById('theme-toggle');
-            const languageToggle = document.getElementById('language-toggle');
+            // const languageToggle = document.getElementById('language-toggle'); // 已注释：语言切换功能
             const htmlElement = document.documentElement;
             
             // 检查本地存储或系统偏好
